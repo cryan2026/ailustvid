@@ -84,7 +84,7 @@ wrangler pages deploy .
 |------|------|
 | ✅ 有 `_ga_f` cookie | 直接返回 `index.html` |
 | ✅ 无 cookie 但 URL 包含所有追踪参数 | 返回 `index.html` 并设置新 cookie |
-| ❌ 无 cookie 且缺少追踪参数 | 重定向到 `https://ifanspro.xyz/` |
+| ❌ 无 cookie 且缺少追踪参数 | 重定向到 `https://xxxx.xxx/` |
 
 ### Cookie 格式
 
@@ -145,11 +145,11 @@ http://example.pages.dev/?utm_campaign=spring
 1. 在 Dashboard 中找到 **Settings** → **Environment variables**
 2. 添加变量：
    ```
-   REDIRECT_URL = https://ifanspro.xyz/
+   REDIRECT_URL = https://xxxx.xxx/
    ```
 3. 修改 `functions/index.js`：
    ```javascript
-   return Response.redirect(process.env.REDIRECT_URL || 'https://ifanspro.xyz/', 302);
+   return Response.redirect(process.env.REDIRECT_URL || 'https://xxxx.xxx/', 302);
    ```
 
 ### 3. 缓存优化
