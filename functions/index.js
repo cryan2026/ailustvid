@@ -1,46 +1,47 @@
 export async function onRequest(context) {
   const { request } = context;
   const url = new URL(request.url);
-  
-  // Check for _ga_f cookie
+
+  // Read cookie
   const cookieHeader = request.headers.get('Cookie') || '';
   const hasCookie = cookieHeader.includes('_ga_f=');
-  
-  // Extract tracking parameters from URL
+
+  // Read tracking parameters
   const channel_id = url.searchParams.get('channel_id');
   const utm_campaign = url.searchParams.get('utm_campaign');
   const utm_adset = url.searchParams.get('utm_adset');
   const utm_ad = url.searchParams.get('utm_ad');
-  
-  // Check if ALL tracking parameters exist
-  const hasAllTrackingParams = channel_id && utm_campaign && utm_adset && utm_ad;
-  
-  // Routing logic:
-  // 1. If has cookie OR has all params → serve index.html
-  // 2. Otherwise → redirect to https://ifanspro.xyz/
-  if (hasCookie || hasAllTrackingParams) {
-    // Let Cloudflare Pages serve the static index.html file
-    const response = await context.next();
-    
-    // If no cookie but has all params, set a new _ga_f cookie
-    if (!hasCookie && hasAllTrackingParams) {
-      // Generate random _ga_f cookie value with format GA.xxxxxxxx
-      const randomPart = Math.random().toString(36).substring(2, 10);
-      const gaValue = `GA.${randomPart}`;
-      
-      // Set the cookie in the response
-      response.headers.set(
-        'Set-Cookie',
-        `_ga_f=${gaValue}; Path=/; Max-Age=31536000; SameSite=Lax`
-      );
-      
-      // Add cache control for better performance
-      response.headers.set('Cache-Control', 'public, max-age=3600');
-    }
-    
-    return response;
-  } else {
-    // No cookie and missing parameters → redirect
+
+  const hasAllTrackingParams = Boolean(
+    channel_id && utm_campaign && utm_adset && utm_ad
+  );
+
+  // If neither cookie nor complete tracking parameters exist, redirect.
+  if (!hasCookie && !hasAllTrackingParams) {
     return Response.redirect('https://ifanspro.xyz/', 302);
   }
+
+  // Continue to Cloudflare Pages static asset handling.
+  // For the root path '/', this lets Pages return ./index.html.
+  const originResponse = await context.next();
+
+  // Clone the response before modifying headers.
+  const response = new Response(originResponse.body, originResponse);
+
+  // If this is the first qualified entry, set _ga_f cookie.
+  if (!hasCookie && hasAllTrackingParams) {
+    const randomPart = Math.random().toString(36).substring(2, 10);
+    const gaValue = `GA.${randomPart}`;
+
+    response.headers.set(
+      'Set-Cookie',
+      `_ga_f=${gaValue}; Path=/; Max-Age=31536000; SameSite=Lax; Secure; HttpOnly`
+    );
+  }
+
+  // Do not cache HTML routed through the Function.
+  // Static assets are cached separately by _headers.
+  response.headers.set('Cache-Control', 'no-store');
+
+  return response;
 }
