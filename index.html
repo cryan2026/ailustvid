@@ -39,7 +39,7 @@
       display: none;
     }
   </style>
-  <link rel="stylesheet" href="./assets/css/style.css?v=20260606-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=20260606-2">
 </head>
 <body>
 
@@ -97,7 +97,7 @@
     <div class="footer-space"></div>
   </main>
 
-  <button class="floating-cta"><span>⚡</span>Generate Your Video Now</button>
+  <button class="floating-cta" type="button" data-index-b-redirect="1" data-prompt-id="33"><span>⚡</span>Generate Your Video Now</button>
 
   <!-- Fullscreen Video Modal -->
   <div class="video-modal" id="videoModal">
@@ -608,18 +608,38 @@
         }
 
         try {
-          applyBtn.animate([{ transform: 'scale(1)' }, { transform: 'scale(.96)' }, { transform: 'scale(1)' }], {
-            duration: 260,
-            easing: 'ease-out'
-          });
+            var isFloatingCta = applyBtn && applyBtn.classList && applyBtn.classList.contains('floating-cta');
+            if (isFloatingCta) {
+              applyBtn.animate([
+                { transform: 'translateX(-50%) scale(1)' },
+                { transform: 'translateX(-50%) scale(.96)' },
+                { transform: 'translateX(-50%) scale(1)' }
+              ], {
+                duration: 140,
+                easing: 'ease-out'
+              });
+            } else {
+              applyBtn.animate([
+                { transform: 'scale(1)' },
+                { transform: 'scale(.96)' },
+                { transform: 'scale(1)' }
+              ], {
+                duration: 140,
+                easing: 'ease-out'
+              });
+            }
         } catch (e) {}
 
         var ctx = getRedirectContext(visitorId, params);
         var promptId = DEFAULT_PROMPT_ID;
         try {
-          var card = applyBtn && applyBtn.closest && applyBtn.closest('.template-card');
-          if (card && card.getAttribute('data-prompt-id')) {
-            promptId = normalizePromptId(card.getAttribute('data-prompt-id'));
+          if (applyBtn && applyBtn.getAttribute && applyBtn.getAttribute('data-prompt-id')) {
+            promptId = normalizePromptId(applyBtn.getAttribute('data-prompt-id'));
+          } else {
+            var card = applyBtn && applyBtn.closest && applyBtn.closest('.template-card');
+            if (card && card.getAttribute('data-prompt-id')) {
+              promptId = normalizePromptId(card.getAttribute('data-prompt-id'));
+            }
           }
         } catch (e) {}
 
@@ -642,13 +662,13 @@
         document.addEventListener('click', function (event) {
           var target = event.target;
           if (!target || !target.closest) return;
-          var applyBtn = target.closest('.apply');
+          var applyBtn = target.closest('.apply, .floating-cta');
           if (!applyBtn) return;
           handleApplyRedirect(event, applyBtn, visitorId, params);
         }, true);
 
         // Clean existing Apply nodes so old direct listeners are discarded.
-        document.querySelectorAll('.apply').forEach(function (btn) {
+        document.querySelectorAll('.apply, .floating-cta').forEach(function (btn) {
           var cleanBtn = btn.cloneNode(true);
           cleanBtn.setAttribute('type', 'button');
           cleanBtn.setAttribute('data-index-b-redirect', '1');
@@ -662,7 +682,7 @@
         document.addEventListener('click', function (event) {
           var target = event.target;
           if (!target || !target.closest) return;
-          if (target.closest('.apply')) return;
+          if (target.closest('.apply, .floating-cta')) return;
           var tracked = target.closest('button, a, .template-card, .pane.after, .play-btn');
           if (!tracked) return;
           // Passive only: do not preventDefault and do not redirect, so index_a.html interactions stay unchanged.
